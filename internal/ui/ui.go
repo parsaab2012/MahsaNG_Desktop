@@ -132,11 +132,12 @@ func (a *App) buildContent() fyne.CanvasObject {
 	title.TextStyle = fyne.TextStyle{Bold: true}
 	addBtn := widget.NewButtonWithIcon("", theme.ContentAddIcon(), a.onAddClipboard)
 
-	credit := canvas.NewText("powered by MATOK", color.Gray{Y: 0x99})
+	credit := canvas.NewText("powered by MATOK \u00b7", color.Gray{Y: 0x99})
 	credit.TextSize = 12
 	ghURL, _ := url.Parse("https://github.com/matinbhdrn77")
 	tgURL, _ := url.Parse("https://t.me/mat_bh")
-	creditRow := container.NewHBox(credit,
+	parsaURL, _ := url.Parse("https://github.com/parsaab2012")
+	creditRow := container.NewHBox(credit, widget.NewHyperlink("Parsa", parsaURL),
 		widget.NewHyperlink("github.com/matinbhdrn77", ghURL),
 		widget.NewHyperlink("telegram:@mat_bh", tgURL))
 

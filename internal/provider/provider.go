@@ -133,6 +133,12 @@ func (s *Subscription) Fetch(ctx context.Context) ([]model.Config, error) {
 	}
 	// Some subscription hosts gate on a v2ray-ish user agent.
 	req.Header.Set("User-Agent", "v2rayNG/1.8.0")
+
+	// Use GitHub Contents API for GitHub-hosted subscriptions.
+	if strings.HasPrefix(s.URL, "https://api.github.com/") {
+		req.Header.Set("Accept", "application/vnd.github.raw+json")
+		req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	}
 	resp, err := s.HTTP.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("%s: fetch: %w", s.ProviderName, err)

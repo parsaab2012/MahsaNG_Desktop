@@ -26,13 +26,12 @@ var builtinSources = []struct {
 	weight    int
 }{
 	// Iran-oriented, auto-tested "healthy only", carries REALITY.
-	{"Freedom-VLESS", "https://raw.githubusercontent.com/MahanKenway/Freedom-V2Ray/main/configs/vless.txt", 3},
-	{"Epodonios", "https://raw.githubusercontent.com/Epodonios/v2ray-configs/main/All_Configs_Sub.txt", 3},
-	{"BarryFar-VLESS", "https://raw.githubusercontent.com/barry-far/V2ray-config/main/Splitted-By-Protocol/vless.txt", 3},
+	{"Freedom-VLESS", "https://api.github.com/repos/MahanKenway/Freedom-V2Ray/contents/configs/vless.txt?ref=main", 3},
+	{"BarryFar-VLESS", "https://api.github.com/repos/barry-far/V2ray-config/contents/Splitted-By-Protocol/vless.txt?ref=main", 3},
 	// Filtered subscription, carries REALITY.
-	{"MatinGhanbari-VLESS", "https://raw.githubusercontent.com/MatinGhanbari/v2ray-configs/main/subscriptions/filtered/subs/vless.txt", 2},
-	{"BarryFar", "https://raw.githubusercontent.com/barry-far/V2ray-Config/main/All_Configs_Sub.txt", 2},
-	{"MhdiTaheri", "https://raw.githubusercontent.com/MhdiTaheri/V2rayCollector/main/sub/mix", 2},
+	{"MatinGhanbari-VLESS", "https://api.github.com/repos/MatinGhanbari/v2ray-configs/contents/subscriptions/filtered/subs/vless.txt?ref=main", 2},
+	{"BarryFar", "https://api.github.com/repos/barry-far/V2ray-Config/contents/All_Configs_Sub.txt?ref=main", 2},
+	{"MhdiTaheri", "https://api.github.com/repos/MhdiTaheri/V2rayCollector/contents/sub/mix?ref=main", 2},
 }
 
 // serverlessURL is the patterniha/Serverless-for-Iran feed: whole xray configs

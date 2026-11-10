@@ -1,120 +1,286 @@
 # MahsaNG Desktop
 
-A cross-platform desktop VPN client in Go — an independent desktop port of the
-MahsaNG Android app. It fetches free
-v2ray/xray configs from public sources, latency-tests them concurrently, and
-routes your whole system through the server you pick.
+**A cross-platform desktop VPN client written in Go.**
 
-Built with [Fyne](https://fyne.io) for the UI and
-[xray-core](https://github.com/XTLS/Xray-core) embedded as a library (no
-external binaries), with system-wide routing via
-[tun2socks](https://github.com/xjasonlyu/tun2socks).
+An independent desktop port of the MahsaNG Android application, originally developed by MATOK.
+
+This repository is a personal fork maintained by [Parsa](https://github.com/parsaab2012), featuring improvements to subscription fetching, UI attribution, and Windows network recovery.
+
+[Original Repository](https://github.com/bhdrnmatin/MahsaNG_Desktop) · [Releases](https://github.com/parsaab2012/MahsaNG_Desktop/releases) · [Report an Issue](https://github.com/parsaab2012/MahsaNG_Desktop/issues)
+
+---
 
 ## Features
 
-- **GET CONFIG** — pulls fresh configs from several public aggregators at once,
-  de-duplicates, keeps a weighted spread across sources, and skips configs that
-  failed a test in the last 24h (so you don't re-test known-bad servers)
-- **TEST ALL** — real-latency HTTPS probe through each server with 16 concurrent
-  workers, stopping early once enough live servers are found. The probe pulls a
-  real payload (not just a tiny response), so servers that connect but get
-  throttled are caught. Failures are classified by cause —
-  *reset / timeout / throttled / blocked / bad cfg* — so you can see *why* a
-  server didn't work. **SORT** orders fastest-first.
-- **Speed Test** — download throughput check for a single server
-- **Prune** — **Delete Invalid** drops tested-failed servers; **Delete All**
-  clears the whole list (with a confirm)
-- **Connect** — one click starts a local SOCKS5/HTTP proxy *and* a TUN device
-  that routes all OS traffic through the server (apps that ignore proxy
-  settings included)
-- **Clipboard import** — paste a share link, a list, or a whole base64
-  subscription blob
-- Supported links: `vmess://`, `vless://`, `trojan://`, `ss://`
-  (transports: tcp, ws, grpc, http/h2 — security: none, tls, reality)
+### GET CONFIG
+- Fetches configurations from multiple public subscription providers.
+- Deduplicates configurations.
+- Maintains a weighted distribution across providers.
+- Skips configurations that failed testing during the previous 24 hours.
+- Uses GitHub Contents API for selected GitHub-hosted subscription sources.
+
+### TEST ALL
+- Concurrent HTTPS latency testing with 16 workers.
+- Stops early after finding enough working configurations.
+- Tests real HTTPS payloads instead of relying only on connection establishment.
+- Classifies failures by cause:
+  - Reset
+  - Timeout
+  - Throttled
+  - Blocked
+  - Bad configuration
+
+### Speed Test
+Measures download throughput through a selected configuration.
+
+### Configuration Management
+- **Delete Invalid:** Removes configurations that failed testing.
+- **Delete All:** Removes the entire configuration list after confirmation.
+- **Clipboard Import:** Supports individual share links, multiple links, and Base64 subscription content.
+
+### Connect
+Starts a local SOCKS5/HTTP proxy and, where supported, a TUN interface to route system traffic through the selected server.
+
+### Serverless Configurations
+Supports complete Xray configurations that do not require a traditional proxy server.
+
+System-wide TUN support depends on the operating system and network interface capabilities. On Windows and macOS, serverless configurations use local SOCKS5/HTTP proxy mode.
+
+### Automatic Wi-Fi Recovery (Windows)
+
+This fork introduces an optional Windows-only network recovery feature.
+
+When enabled:
+1. The user disconnects from the VPN through the application.
+2. MahsaNG finishes tunnel cleanup.
+3. The application attempts to restart the detected physical Wi-Fi adapter.
+4. The recovery result is displayed in the application's status message.
+
+The feature is disabled by default.
+
+**Requirements and limitations:**
+- Windows only.
+- Requires Administrator privileges.
+- Temporarily interrupts the Wi-Fi connection.
+- Only proceeds when exactly one matching physical wireless adapter is detected.
+
+---
+
+## Supported Configurations
+
+Supported share-link protocols:
+
+- VMess
+- VLESS
+- Trojan
+- Shadowsocks
+
+Supported transports and security options depend on the configuration and parser implementation, including TCP, WebSocket, gRPC, HTTP/H2, TLS, and REALITY.
+
+---
+
+## Fork Improvements
+
+Compared with the original repository, this fork includes:
+
+### Subscription Provider Improvements
+- Updated selected GitHub-hosted subscription sources to use GitHub Contents API.
+- Added appropriate GitHub API request headers.
+- Updated the built-in provider list.
+- Removed the previously configured Epodonios subscription source.
+
+### UI Attribution
+- Added a link to Parsa's GitHub profile.
+- Preserved the original MATOK GitHub and Telegram credits.
+
+### Windows Network Recovery
+- Added an optional Wi-Fi recovery checkbox.
+- Added persistent preference storage.
+- Added Windows-specific adapter recovery logic.
+
+---
 
 ## Download
 
-Grab the latest binary for your OS from the
-[Releases page](../../releases) — no install, no dependencies:
+Prebuilt binaries will be published through the GitHub Releases page:
 
-| OS | Asset | Notes |
-|---|---|---|
-| Linux | `mahsang-linux-amd64.tar.gz` | run the binary |
-| Windows | `mahsang-windows-amd64.zip` | keep `wintun.dll` next to the exe |
-| macOS | `mahsang-macos-arm64.tar.gz` | Apple Silicon; first launch: right-click → Open (unsigned) |
+**[MahsaNG Desktop Releases](https://github.com/parsaab2012/MahsaNG_Desktop/releases)**
 
-Everything works unprivileged **except Connect**, which creates a TUN device
-and edits the routing table:
+No prebuilt release has been published in this fork yet. Until the first release is available, build the application from source.
 
-- Linux / macOS: `sudo ./mahsang`
-- Windows: right-click → *Run as administrator*
+---
 
 ## Usage
 
-1. **GET CONFIG** (or paste your own subscription/links via the **+** button)
-2. **TEST ALL**, then **SORT** — failed servers are labelled by reason
-   (reset / timeout / throttled / blocked); the status line shows a breakdown
-3. *(optional)* **Delete Invalid** to prune dead servers, or **Delete All** to
-   clear the list
-4. Select a server and press **Connect** — the whole system now routes
-   through it. Press **Disconnect** to restore normal routing.
+1. Launch MahsaNG Desktop.
+2. Press **GET CONFIG** or import your own configuration using the `+` button.
+3. Press **TEST ALL**.
+4. Press **SORT** to arrange configurations by speed.
+5. Select a configuration and press **Connect**.
+6. Press **Disconnect** when finished.
 
-## Build from source
+On Windows, the optional Wi-Fi recovery setting can be enabled from the main interface.
 
-Requires Go (see `go.mod` for the version) and a C compiler (Fyne uses cgo).
+---
+
+## Build from Source
+
+Requirements:
+- Go (check `go.mod` for the required version).
+- A C compiler, because Fyne uses CGO.
+- Platform-specific development dependencies.
+
+### Linux
+
+Install the required development packages:
 
 ```bash
-# Linux build deps for Fyne
+sudo apt update
 sudo apt install gcc libgl1-mesa-dev xorg-dev
-
-go build ./cmd/mahsang     # GUI
-go build ./cmd/mahsang-cli # headless CLI
 ```
 
-On Windows use a MinGW-w64 gcc (e.g. MSYS2); on macOS install the Xcode
-command-line tools.
+Build:
 
-### CLI
-
-`mahsang-cli` exercises the same engine without a GUI:
-
-```
-mahsang-cli get               # fetch from built-in providers, list configs
-mahsang-cli test <subURL|->   # fetch a subscription URL, ping all, sorted
-mahsang-cli ping <share-link> # measure one link
-mahsang-cli connect <link>    # local SOCKS tunnel + egress IP check
-mahsang-cli speed <link>      # download throughput through one link
+```bash
+go build -o mahsang ./cmd/mahsang
+go build -o mahsang-cli ./cmd/mahsang-cli
 ```
 
-## How it works
+### Windows
 
+Use MinGW-w64 GCC, for example through MSYS2 UCRT64.
+
+With MSYS2 UCRT64 installed:
+
+```powershell
+$env:Path = "C:\msys64\ucrt64\bin;$env:Path"
+$env:CGO_ENABLED = "1"
 ```
-provider  →  parser  →  tester  →  core (xray-core)  →  tun (tun2socks)
-fetch links  link →      16-worker   SOCKS/HTTP proxy +   TUN device +
-from sources  outbound    ping pool   latency/speed probe   route override
-              JSON
+
+Build:
+
+```powershell
+go build -o mahsang.exe ./cmd/mahsang
 ```
 
-- Config sources implement a small `Provider` interface, so adding a new feed
-  is one constructor call (see `internal/provider/builtin.go`)
-- Connect excludes the VPN server's own IP from the TUN routes to avoid a
-  routing loop, and restores the routing table on disconnect/exit
+For system-wide VPN connections and optional Wi-Fi recovery, run the application as Administrator.
 
-> **Note on the original Mahsa feed:** mahsaserver.com delivers configs over a
-> closed, authenticated protocol that is deliberately unpublished, so this
-> port ships public aggregators instead. If that protocol ever becomes
-> legitimately available, it slots in as just another `Provider`.
+Keep `wintun.dll` next to the executable.
 
-## Known limitations
+### macOS
 
-- Connect requires the whole app to run elevated (privilege separation is
-  planned)
-- DNS requests to a LAN resolver (e.g. your router) bypass the tunnel —
-  use a public DNS while connected
-- Windows and macOS TUN routing is new and less battle-tested than Linux —
-  issue reports welcome
-- Free public configs come and go; expect to re-run GET CONFIG / TEST ALL
+Install Xcode Command Line Tools:
+
+```bash
+xcode-select --install
+```
+
+Then build:
+
+```bash
+go build -o mahsang ./cmd/mahsang
+```
+
+---
+
+## Testing
+
+Run the complete Go test suite:
+
+```bash
+go test ./...
+```
+
+---
+
+## CLI
+
+The project also includes a command-line interface:
+
+```bash
+mahsang-cli get
+mahsang-cli test <subURL|->
+mahsang-cli ping <share-link>
+mahsang-cli connect <link>
+mahsang-cli speed <link>
+```
+
+The CLI shares the same underlying engine and configuration processing components.
+
+---
+
+## Architecture
+
+```text
+Provider
+   |
+   v
+Parser
+   |
+   v
+Tester
+   |
+   v
+Core (xray-core)
+   |
+   v
+TUN / tun2socks
+```
+
+The project is organized into independent internal packages:
+
+| Package | Responsibility |
+|---|---|
+| `core` | Xray engine and tunnel management |
+| `parser` | Share-link parsing |
+| `provider` | Subscription retrieval |
+| `tester` | Configuration testing |
+| `store` | Persistent configuration storage |
+| `tun` | System-wide routing |
+| `ui` | Fyne desktop interface |
+| `model` | Application data models |
+| `logx` | Logging |
+
+---
+
+## Known Limitations
+
+- Public configuration sources are volatile and may become unavailable.
+- Configuration testing does not guarantee long-term availability.
+- System-wide Connect requires elevated privileges.
+- Windows and macOS routing may behave differently from Linux.
+- Windows Wi-Fi recovery is optional and may temporarily interrupt wireless connectivity.
+- DNS requests to some LAN resolvers may bypass the tunnel.
+- Serverless configurations may use local proxy mode depending on the operating system.
+
+---
 
 ## Credits
 
-Powered by **MATOK** — Telegram [@mat_bh](https://t.me/mat_bh)
+### Original Project
+
+Developed by **MATOK**.
+
+- GitHub: [matinbhdrn77](https://github.com/matinbhdrn77)
+- Telegram: [@mat_bh](https://t.me/mat_bh)
+- Original repository: [MahsaNG_Desktop](https://github.com/bhdrnmatin/MahsaNG_Desktop)
+
+### Fork and Modifications
+
+Maintained by **Parsa**.
+
+- GitHub: [parsaab2012](https://github.com/parsaab2012)
+
+---
+
+## License
+
+This project retains the original MIT License.
+
+Original copyright notice:
+
+```text
+Copyright (c) 2026 matin
+```
+
+See [LICENSE](LICENSE) for the full license text.

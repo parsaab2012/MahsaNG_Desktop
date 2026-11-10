@@ -1,9 +1,16 @@
-﻿name: Release
+name: Release
 
 on:
   push:
-    tags: ["v*"]
+    tags: ["v*", "preview-*"]
+
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Existing release tag to upload build artifacts to"
+        required: true
+        default: "preview-0.3.0"
+        type: string
 
 permissions:
   contents: read
@@ -27,6 +34,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
 
       - uses: actions/setup-go@v7.0.0
         with:
@@ -71,7 +80,7 @@ jobs:
 
   release:
     needs: build
-    if: startsWith(github.ref, 'refs/tags/')
+    if: ${{ !cancelled() && (startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-24.04
 
     permissions:
@@ -82,10 +91,34 @@ jobs:
         with:
           merge-multiple: true
 
-      - uses: softprops/action-gh-release@v3.0.3
-        with:
-          name: MahsaNG Desktop ${{ github.ref_name }}
-          generate_release_notes: true
-          files: |
-            mahsang-*.tar.gz
-            mahsang-*.zip
+      - name: Upload packages to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(mahsang-*.tar.gz mahsang-*.zip)
+
+          if (( ${#files[@]} == 0 )); then
+            echo "::error::No build packages were downloaded."
+            exit 1
+          fi
+
+          echo "Uploading packages to: $RELEASE_TAG"
+          printf 'Found package: %s\n' "${files[@]}"
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "${files[@]}" --clobber
+          else
+            if [[ "$RELEASE_TAG" == preview-* ]]; then
+              version="${RELEASE_TAG#preview-}"
+              gh release create "$RELEASE_TAG" "${files[@]}" \
+                --title "MahsaNG Desktop v${version} — Preview" \
+                --generate-notes --prerelease --verify-tag
+            else
+              gh release create "$RELEASE_TAG" "${files[@]}" \
+                --title "MahsaNG Desktop ${RELEASE_TAG}" \
+                --generate-notes --verify-tag
+            fi
+          fi

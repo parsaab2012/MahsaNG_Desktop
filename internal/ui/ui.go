@@ -170,6 +170,15 @@ func (a *App) buildContent() fyne.CanvasObject {
 	// it dictate a wider minimum size, which would grow the window.
 	a.status.Wrapping = fyne.TextWrapWord
 	bottom := container.NewVBox(buttons, actionRow, a.status)
+	if wifiRepairSupported() {
+		prefs := a.fyneApp.Preferences()
+		repairCheck := widget.NewCheck("Restart Wi-Fi adapter after VPN disconnect", nil)
+		repairCheck.SetChecked(prefs.BoolWithFallback("repair_wifi_after_disconnect", false))
+		repairCheck.OnChanged = func(enabled bool) {
+			prefs.SetBool("repair_wifi_after_disconnect", enabled)
+		}
+		bottom = container.NewVBox(buttons, actionRow, repairCheck, a.status)
+	}
 
 	return container.NewBorder(top, bottom, nil, nil, a.list)
 }
@@ -665,13 +674,30 @@ func (a *App) onSpeedTest() {
 // server. This needs root (creating a TUN device + editing the route table).
 func (a *App) onConnectToggle() {
 	if a.tunnel != nil {
+		shouldRepairWiFi := wifiRepairSupported() &&
+			a.fyneApp.Preferences().BoolWithFallback("repair_wifi_after_disconnect", false)
 		_ = tun.Stop() // restore routing before the proxy dies
 		a.tunnel.Close()
 		a.tunnel = nil
 		a.connected = -1
 		a.connBtn.SetText("Connect")
 		a.list.Refresh()
-		a.setStatus("Disconnected.")
+		if shouldRepairWiFi {
+			a.setStatus("Disconnected. Repairing Wi-Fi...")
+			go func() {
+				time.Sleep(1 * time.Second)
+				err := repairWiFi()
+				fyne.Do(func() {
+					if err != nil {
+						a.setStatus(fmt.Sprintf("Disconnected. Wi-Fi repair failed: %v", err))
+					} else {
+						a.setStatus("Disconnected. Wi-Fi adapter restarted successfully.")
+					}
+				})
+			}()
+		} else {
+			a.setStatus("Disconnected.")
+		}
 		return
 	}
 	if a.busy {

@@ -1,6 +1,6 @@
 module mahsang
 
-go 1.26.3
+go 1.26.10
 
 require (
 	fyne.io/fyne/v2 v2.7.4
